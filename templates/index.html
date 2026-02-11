@@ -359,6 +359,23 @@
         .legend-color.prediccion {
             background-color: #e7f9ed;
         }
+          .btn-visualizar {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .btn-visualizar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -396,7 +413,7 @@
             </div>
             
             {% if datos %}
-            <div class="stats-cards">
+             <div class="stats-cards">
                 <div class="stat-card">
                     <h4>Archivos Procesados</h4>
                     <div class="number">{{ datos.total_archivos }}</div>
@@ -421,6 +438,14 @@
                 </div>
             </div>
             
+            
+            <!-- NUEVO BOTÓN PARA VISUALIZACIÓN CIRCULAR -->
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="/visualizar_circular" target="_blank" class="btn-visualizar">
+                    🎯 Visualización Circular del Genoma
+                </a>
+            </div>
+           
             <div class="table-section">
                 <h3>📋 Variables de Entrada + Predicciones ML</h3>
                 

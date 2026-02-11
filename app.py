@@ -7,6 +7,9 @@ from collections import Counter
 import math
 import re
 import pickle
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_aqui'
@@ -207,7 +210,7 @@ def limpiar_archivos(lista_archivos):
                 print(f"  ✓ Eliminado: {os.path.basename(archivo)}")
         except Exception as e:
             print(f"  ⚠️ No se pudo eliminar {os.path.basename(archivo)}: {e}")
-            
+
 # ============================================================================
 # FUNCIÓN DE PREDICCIÓN
 # ============================================================================
@@ -505,6 +508,122 @@ def get_data():
     }
     
     return jsonify(data)
+
+@app.route('/visualizar_circular')
+def visualizar_circular():
+    """Genera visualización circular del genoma con predicciones"""
+    global dataset_completo_global
+    
+    if dataset_completo_global is None:
+        return jsonify({'error': 'No hay datos cargados'}), 400
+    
+    try:
+        # Obtener datos necesarios
+        df = dataset_completo_global.copy()
+        
+        # Crear una columna de posición angular (0-360 grados)
+        total_filas = len(df)
+        df['angulo'] = [(i / total_filas) * 360 for i in range(total_filas)]
+        
+        # Crear color basado en probabilidad de conservada
+        # 0-30%: Rojo, 30-70%: Amarillo, 70-100%: Verde
+        def obtener_color(prob):
+            if prob >= 0.70:
+                # Verde: de verde claro a verde oscuro
+                intensidad = int(255 * (prob - 0.70) / 0.30)
+                return f'rgb({255-intensidad}, {200+intensidad//4}, {100})'
+            elif prob >= 0.30:
+                # Amarillo
+                return f'rgb(255, {200}, 50)'
+            else:
+                # Rojo: de naranja a rojo oscuro
+                intensidad = int(255 * (0.30 - prob) / 0.30)
+                return f'rgb({255}, {150-intensidad}, {100-intensidad})'
+        
+        df['color'] = df['prob_conservada'].apply(obtener_color)
+        
+        # Crear texto para hover (tooltip)
+        df['hover_text'] = df.apply(lambda row: 
+            f"<b>Ventana #{df.index.get_loc(row.name) + 1}</b><br>" +
+            f"Predicción: <b>{row['prediccion']}</b><br>" +
+            f"Prob. Conservada: <b>{row['prob_conservada']:.2%}</b><br>" +
+            f"Prob. Variable: <b>{row['prob_variable']:.2%}</b><br>" +
+            f"GC: {row.get('contenido_GC', 0):.2f}%<br>" +
+            f"Entropía: {row.get('entropia_shannon', 0):.4f}<br>" +
+            f"Conservación: {row.get('conservacion_posicional', 0):.2f}%",
+            axis=1
+        )
+        
+        # Crear gráfico polar
+        fig = go.Figure()
+        
+        # Agregar las barras en coordenadas polares
+        fig.add_trace(go.Barpolar(
+            r=[1] * len(df),  # Todas en el mismo radio
+            theta=df['angulo'],
+            width=[360/total_filas] * len(df),  # Ancho de cada barra
+            marker=dict(
+                color=df['color'],
+                line=dict(color='white', width=0.5)
+            ),
+            hovertext=df['hover_text'],
+            hoverinfo='text',
+            name='Ventanas genómicas'
+        ))
+        
+        # Configuración del layout
+        fig.update_layout(
+            title={
+                'text': '🧬 Visualización Circular del Genoma HPV<br><sub>Verde: Conservada | Rojo: Variable</sub>',
+                'x': 0.5,
+                'xanchor': 'center',
+                'font': {'size': 20, 'color': '#333'}
+            },
+            polar=dict(
+                radialaxis=dict(
+                    visible=False,
+                    range=[0, 1.2]
+                ),
+                angularaxis=dict(
+                    visible=True,
+                    tickmode='linear',
+                    tick0=0,
+                    dtick=30,
+                    direction='clockwise',
+                    rotation=90
+                ),
+                bgcolor='rgba(255,255,255,0.9)'
+            ),
+            showlegend=False,
+            height=700,
+            paper_bgcolor='#f8f9fa',
+            margin=dict(l=80, r=80, t=100, b=80)
+        )
+        
+        # Agregar anotación en el centro
+        fig.add_annotation(
+            x=0.5,
+            y=0.5,
+            text=f"<b>HPV</b><br>{total_filas} ventanas",
+            showarrow=False,
+            font=dict(size=16, color='#667eea'),
+            xref="paper",
+            yref="paper"
+        )
+        
+        # Convertir a HTML
+        graph_html = fig.to_html(
+            full_html=False,
+            include_plotlyjs='cdn',
+            config={'responsive': True, 'displayModeBar': True}
+        )
+        
+        return render_template('visualizacion_circular.html', graph_html=graph_html, total_ventanas=total_filas)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

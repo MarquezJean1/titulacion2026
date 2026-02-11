@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización Circular - HPV</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-back {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 2px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-back:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .legend-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .legend-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .legend-items {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .legend-color.conservada {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .legend-color.dudosa {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        }
+        
+        .legend-color.variable {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .legend-text {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .legend-text strong {
+            color: #333;
+        }
+        
+        .graph-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .stats {
+            text-align: center;
+            color: #666;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .instructions h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="btn-back">← Volver</a>
+            <h1>🧬 Visualización Circular del Genoma</h1>
+            <p>Análisis de regiones conservadas y variables</p>
+        </div>
+        
+        <div class="content">
+            <div class="instructions">
+                <h3>💡 Instrucciones de uso:</h3>
+                <ul>
+                    <li><strong>Pasa el mouse</strong> sobre las barras para ver detalles de cada ventana</li>
+                    <li><strong>Haz zoom</strong> con la rueda del mouse o los controles de la esquina</li>
+                    <li><strong>Arrastra</strong> para rotar el gráfico</li>
+                    <li><strong>Doble clic</strong> para resetear la vista</li>
+                </ul>
+            </div>
+            
+            <div class="legend-container">
+                <div class="legend-title">📊 Escala de Probabilidad de Conservación</div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color variable"></div>
+                        <div class="legend-text">
+                            <strong>0-30%</strong><br>
+                            Variable
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color dudosa"></div>
+                        <div class="legend-text">
+                            <strong>30-70%</strong><br>
+                            Intermedia
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color conservada"></div>
+                        <div class="legend-text">
+                            <strong>70-100%</strong><br>
+                            Conservada
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="graph-container">
+                {{ graph_html|safe }}
+            </div>
+            
+            <div class="stats">
+                Total de ventanas analizadas: <strong>{{ total_ventanas }}</strong>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
