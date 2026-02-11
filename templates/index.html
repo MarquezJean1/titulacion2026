@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de Archivos GFF3 - HPV</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .upload-section {
+            background-color: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .upload-section p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .file-label:hover {
+            background-color: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .files-list {
+            margin: 15px 0;
+            color: #333;
+            font-size: 14px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            background: white;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .btn-upload {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 40px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+        
+        .btn-upload:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-upload:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h4 {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .table-section {
+            margin-top: 30px;
+        }
+        
+        .table-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .pagination {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .pagination button {
+            padding: 8px 15px;
+            border: 1px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .page-info {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .per-page-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .columns-list {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .columns-list h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .columns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        
+        .column-item {
+            background-color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 500;
+            border: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 Procesador de Archivos GFF3 - HPV</h1>
+            <p>Carga múltiples archivos GFF3 para extraer variables de entrada del modelo de ML</p>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="upload-section">
+                <h3>📁 Cargar Archivos GFF3</h3>
+                <p>Selecciona uno o múltiples archivos GFF3<br>Tamaño máximo por archivo: 16 MB</p>
+                
+                <form method="POST" action="/upload" enctype="multipart/form-data" id="uploadForm">
+                    <label for="file-input" class="file-label">
+                        📂 Seleccionar Archivos
+                    </label>
+                    <input type="file" id="file-input" name="files[]" accept=".gff3,.gff" multiple required>
+                    
+                    <div class="files-list" id="files-list">Ningún archivo seleccionado</div>
+                    
+                    <button type="submit" class="btn-upload" id="btn-submit" disabled>
+                        ⬆ Procesar Archivos
+                    </button>
+                </form>
+            </div>
+            
+            {% if datos %}
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h4>Archivos Procesados</h4>
+                    <div class="number">{{ datos.total_archivos }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Total de Ventanas</h4>
+                    <div class="number">{{ datos.total_filas }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Variables de Entrada</h4>
+                    <div class="number">{{ datos.total_columnas }}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Archivos Excluidos</h4>
+                    <div class="number">{{ datos.archivos_excluidos }}</div>
+                </div>
+            </div>
+            
+            <div class="table-section">
+                <h3>📋 Variables de Entrada Extraídas</h3>
+                
+                <div class="table-controls">
+                    <div class="page-info" id="page-info">Cargando datos...</div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label for="per-page">Filas por página:</label>
+                        <select id="per-page" class="per-page-select">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </div>
+                    
+                    <div class="pagination" id="pagination">
+                        <button id="btn-first" onclick="goToPage(1)">«</button>
+                        <button id="btn-prev" onclick="goToPage(currentPage - 1)">‹</button>
+                        <span id="page-numbers"></span>
+                        <button id="btn-next" onclick="goToPage(currentPage + 1)">›</button>
+                        <button id="btn-last" onclick="goToPage(totalPages)">»</button>
+                    </div>
+                </div>
+                
+                <div class="table-wrapper">
+                    <div id="loading" class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando datos...</p>
+                    </div>
+                    <table id="data-table" style="display: none;">
+                        <thead id="table-header"></thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // Manejo de selección de archivos
+        const fileInput = document.getElementById('file-input');
+        const filesList = document.getElementById('files-list');
+        const btnSubmit = document.getElementById('btn-submit');
+        
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                filesList.innerHTML = '';
+                for (let i = 0; i < this.files.length; i++) {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `📄 ${this.files[i].name}`;
+                    filesList.appendChild(fileItem);
+                }
+                btnSubmit.disabled = false;
+            } else {
+                filesList.textContent = 'Ningún archivo seleccionado';
+                btnSubmit.disabled = true;
+            }
+        });
+        
+        {% if datos %}
+        // Variables de paginación
+        let currentPage = 1;
+        let totalPages = 1;
+        let perPage = 50;
+        
+        // Cargar datos
+        function loadData(page = 1) {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('data-table');
+            
+            loading.style.display = 'block';
+            table.style.display = 'none';
+            
+            fetch(`/get_data?page=${page}&per_page=${perPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    currentPage = data.page;
+                    totalPages = data.total_pages;
+                    
+                    // Actualizar header
+                    const thead = document.getElementById('table-header');
+                    thead.innerHTML = '<tr><th>#</th>' + 
+                        data.columns.map(col => `<th>${col}</th>`).join('') + 
+                        '</tr>';
+                    
+                    // Actualizar body
+                    const tbody = document.getElementById('table-body');
+                    tbody.innerHTML = '';
+                    
+                    data.rows.forEach((row, index) => {
+                        const tr = document.createElement('tr');
+                        const rowNumber = (currentPage - 1) * perPage + index + 1;
+                        tr.innerHTML = `<td><strong>${rowNumber}</strong></td>` + 
+                            data.columns.map(col => {
+                                const value = row[col];
+                                return `<td>${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
+                            }).join('');
+                        tbody.appendChild(tr);
+                    });
+                    
+                    // Actualizar info de página
+                    const start = (currentPage - 1) * perPage + 1;
+                    const end = Math.min(currentPage * perPage, data.total_rows);
+                    document.getElementById('page-info').textContent = 
+                        `Mostrando ${start}-${end} de ${data.total_rows} filas`;
+                    
+                    // Actualizar botones de paginación
+                    updatePagination();
+                    
+                    loading.style.display = 'none';
+                    table.style.display = 'table';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loading.innerHTML = '<p style="color: red;">Error al cargar datos</p>';
+                });
+        }
+        
+        function goToPage(page) {
+            if (page >= 1 && page <= totalPages) {
+                loadData(page);
+            }
+        }
+        
+        function updatePagination() {
+            document.getElementById('btn-first').disabled = currentPage === 1;
+            document.getElementById('btn-prev').disabled = currentPage === 1;
+            document.getElementById('btn-next').disabled = currentPage === totalPages;
+            document.getElementById('btn-last').disabled = currentPage === totalPages;
+            
+            // Generar números de página
+            const pageNumbers = document.getElementById('page-numbers');
+            pageNumbers.innerHTML = '';
+            
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.onclick = () => goToPage(i);
+                if (i === currentPage) {
+                    btn.className = 'active';
+                }
+                pageNumbers.appendChild(btn);
+            }
+        }
+        
+        // Cambio de filas por página
+        document.getElementById('per-page').addEventListener('change', function() {
+            perPage = parseInt(this.value);
+            loadData(1);
+        });
+        
+        // Cargar datos iniciales
+        loadData(1);
+        {% endif %}
+    </script>
+</body>
+</html>

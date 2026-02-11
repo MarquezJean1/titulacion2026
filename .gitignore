@@ -1,0 +1,33 @@
+# Entorno virtual
+venv/
+env/
+
+# Archivos compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de entorno
+.env
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.log
+*.tmp
+
+# VS Code
+.vscode/
+
+# Resultados grandes (opcional)
+*.csv
+*.xlsx
+*.h5
+*.model
+*.gff
