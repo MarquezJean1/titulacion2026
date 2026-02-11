@@ -6,6 +6,7 @@ import numpy as np
 from collections import Counter
 import math
 import re
+import pickle
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_aqui'
@@ -15,6 +16,20 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 ALLOWED_EXTENSIONS = {'gff3', 'gff'}
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# ============================================================================
+# CARGAR MODELO Y SCALER
+# ============================================================================
+try:
+    with open('modelo_random_forest.pkl', 'rb') as archivo:
+        modelo = pickle.load(archivo)
+    with open('scaler.pkl', 'rb') as archivo:
+        scaler = pickle.load(archivo)
+    print("✅ Modelo y scaler cargados exitosamente")
+except Exception as e:
+    print(f"⚠️  Advertencia: No se pudieron cargar los modelos: {e}")
+    modelo = None
+    scaler = None
 
 # ============================================================================
 # FUNCIONES DE EXTRACCIÓN (del código original)
@@ -177,6 +192,73 @@ def clasificar_ventana(inicio, fin, genes):
             return 'C', gen['nombre']
     return 'V', 'Intergénica'
 
+# ============================================================================
+# FUNCIÓN DE PREDICCIÓN
+# ============================================================================
+
+def predecir_region_genomica(datos_ventana):
+    """
+    Hace predicción usando el modelo cargado.
+    Filtra solo las variables que el modelo espera.
+    """
+    if modelo is None or scaler is None:
+        return {
+            'prediccion': 'N/A',
+            'prob_conservada': 0.0,
+            'prob_variable': 0.0
+        }
+    
+    try:
+        # Variables que el modelo espera (SIN posicion_relativa)
+        variables_modelo = [
+            'freq_A', 'freq_T', 'freq_C', 'freq_G',
+            'contenido_GC',
+            'GC_skew', 'AT_skew',
+            'entropia_shannon',
+            'dinuc_AA', 'dinuc_AT', 'dinuc_CG', 'dinuc_GC', 'dinuc_TA', 'dinuc_TT',
+            'conservacion_posicional'
+        ]
+        
+        # Filtrar solo las variables que el modelo necesita
+        datos_filtrados = {k: v for k, v in datos_ventana.items() if k in variables_modelo}
+        
+        # Verificar que tengamos todas las variables necesarias
+        if len(datos_filtrados) != len(variables_modelo):
+            faltantes = set(variables_modelo) - set(datos_filtrados.keys())
+            print(f"⚠️ Faltan variables: {faltantes}")
+            return {
+                'prediccion': 'Error',
+                'prob_conservada': 0.0,
+                'prob_variable': 0.0
+            }
+        
+        # Convertir a DataFrame con el orden correcto
+        df_input = pd.DataFrame([datos_filtrados])[variables_modelo]
+        
+        # Escalar
+        df_scaled = scaler.transform(df_input)
+        
+        # Predecir
+        prediccion = modelo.predict(df_scaled)[0]
+        probabilidad = modelo.predict_proba(df_scaled)[0]
+        
+        resultado = {
+            'prediccion': 'Conservada' if prediccion == 1 else 'Variable',
+            'prob_conservada': round(float(probabilidad[1]), 4),
+            'prob_variable': round(float(probabilidad[0]), 4)
+        }
+        
+        return resultado
+    except Exception as e:
+        print(f"Error en predicción: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'prediccion': 'Error',
+            'prob_conservada': 0.0,
+            'prob_variable': 0.0
+        }
+    
 def procesar_multiples_gff3(archivos_gff3, tamano_ventana=100, paso=50):
     """Procesa múltiples archivos GFF3 y retorna DataFrame con variables"""
     
@@ -274,6 +356,7 @@ def allowed_file(filename):
 
 # Variable global para almacenar el dataset procesado
 dataset_global = None
+dataset_completo_global = None  # Incluye predicciones
 excluidas_global = None
 
 @app.route('/')
@@ -282,7 +365,7 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    global dataset_global, excluidas_global
+    global dataset_global, dataset_completo_global, excluidas_global
     
     if 'files[]' not in request.files:
         flash('No se seleccionaron archivos')
@@ -315,39 +398,55 @@ def upload_file():
             flash('Error: Todas las secuencias contienen códigos IUPAC')
             return redirect(url_for('index'))
         
-        # Extraer solo variables de entrada
+        # Extraer solo variables de entrada para predicción
         columnas_excluir = ['etiqueta', 'region_genomica', 'variante', 
                            'inicio_ventana', 'fin_ventana', 'longitud_ventana']
         
         columnas_entrada = [col for col in df.columns if col not in columnas_excluir]
         
-        # Guardar en variables globales
+        # Guardar dataset de entrada
         dataset_global = df[columnas_entrada].copy()
+        
+        # HACER PREDICCIONES
+        print("🤖 Realizando predicciones...")
+        predicciones = []
+        for idx, row in dataset_global.iterrows():
+            pred = predecir_region_genomica(row.to_dict())
+            predicciones.append(pred)
+        
+        # Crear DataFrame con predicciones
+        df_predicciones = pd.DataFrame(predicciones)
+        
+        # Combinar variables de entrada + predicciones
+        dataset_completo_global = pd.concat([dataset_global, df_predicciones], axis=1)
+        
         excluidas_global = excluidas
         
-        flash(f'✅ {len(archivos_guardados)} archivos procesados exitosamente')
+        flash(f'✅ {len(archivos_guardados)} archivos procesados y {len(dataset_completo_global)} predicciones realizadas')
         
         # Preparar datos para la vista
         datos = {
-            'total_filas': len(dataset_global),
+            'total_filas': len(dataset_completo_global),
             'total_columnas': len(columnas_entrada),
-            'columnas': columnas_entrada,
             'total_archivos': len(archivos_guardados),
-            'archivos_excluidos': len(excluidas)
+            'archivos_excluidos': len(excluidas),
+            'modelo_cargado': modelo is not None
         }
         
         return render_template('index.html', datos=datos)
         
     except Exception as e:
         flash(f'Error al procesar archivos: {str(e)}')
+        import traceback
+        traceback.print_exc()
         return redirect(url_for('index'))
 
 @app.route('/get_data')
 def get_data():
-    """Endpoint para obtener datos paginados"""
-    global dataset_global
+    """Endpoint para obtener datos paginados con predicciones"""
+    global dataset_completo_global
     
-    if dataset_global is None:
+    if dataset_completo_global is None:
         return jsonify({'error': 'No hay datos cargados'}), 400
     
     page = int(request.args.get('page', 1))
@@ -356,16 +455,21 @@ def get_data():
     start_idx = (page - 1) * per_page
     end_idx = start_idx + per_page
     
-    total_rows = len(dataset_global)
+    total_rows = len(dataset_completo_global)
     total_pages = (total_rows + per_page - 1) // per_page
     
     # Obtener datos de la página
-    page_data = dataset_global.iloc[start_idx:end_idx]
+    page_data = dataset_completo_global.iloc[start_idx:end_idx]
+    
+    # Separar columnas de variables y predicciones
+    columnas_prediccion = ['prediccion', 'prob_conservada', 'prob_variable']
+    columnas_variables = [col for col in dataset_completo_global.columns if col not in columnas_prediccion]
     
     # Convertir a formato JSON
     data = {
         'rows': page_data.to_dict('records'),
-        'columns': list(dataset_global.columns),
+        'columnas_variables': columnas_variables,
+        'columnas_prediccion': columnas_prediccion,
         'page': page,
         'per_page': per_page,
         'total_rows': total_rows,

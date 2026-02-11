@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Procesador de Archivos GFF3 - HPV</title>
+    <title>Procesador de Archivos GFF3 - HPV con ML</title>
     <style>
         * {
             margin: 0;
@@ -155,6 +155,10 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
+        .stat-card.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
         .stat-card h4 {
             font-size: 12px;
             opacity: 0.9;
@@ -262,6 +266,11 @@
             white-space: nowrap;
         }
         
+        /* Columnas de predicción con fondo diferente */
+        th.prediccion-col {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
         td {
             padding: 12px;
             border-bottom: 1px solid #e9ecef;
@@ -269,12 +278,34 @@
             color: #333;
         }
         
+        /* Columnas de predicción resaltadas */
+        td.prediccion-col {
+            background-color: #e7f9ed;
+            font-weight: 600;
+        }
+        
+        td.prediccion-col.conservada {
+            color: #28a745;
+        }
+        
+        td.prediccion-col.variable {
+            color: #dc3545;
+        }
+        
         tbody tr:hover {
             background-color: #f8f9fa;
         }
         
+        tbody tr:hover td.prediccion-col {
+            background-color: #d4f4dd;
+        }
+        
         tbody tr:nth-child(even) {
             background-color: #fafbfc;
+        }
+        
+        tbody tr:nth-child(even) td.prediccion-col {
+            background-color: #dff7e6;
         }
         
         .loading {
@@ -298,40 +329,43 @@
             100% { transform: rotate(360deg); }
         }
         
-        .columns-list {
+        .legend {
             background-color: #f8f9fa;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .columns-list h4 {
-            color: #333;
             margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
         }
         
-        .columns-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        .column-item {
-            background-color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 12px;
-            color: #667eea;
-            font-weight: 500;
-            border: 1px solid #e9ecef;
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        
+        .legend-color.variables {
+            background-color: #e9ecef;
+        }
+        
+        .legend-color.prediccion {
+            background-color: #e7f9ed;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🧬 Procesador de Archivos GFF3 - HPV</h1>
-            <p>Carga múltiples archivos GFF3 para extraer variables de entrada del modelo de ML</p>
+            <h1>🧬 Procesador de Archivos GFF3 - HPV con Predicción ML</h1>
+            <p>Carga archivos GFF3 para extraer variables y obtener predicciones de regiones conservadas/variables</p>
         </div>
         
         <div class="content">
@@ -356,7 +390,7 @@
                     <div class="files-list" id="files-list">Ningún archivo seleccionado</div>
                     
                     <button type="submit" class="btn-upload" id="btn-submit" disabled>
-                        ⬆ Procesar Archivos
+                        ⬆ Procesar y Predecir
                     </button>
                 </form>
             </div>
@@ -375,14 +409,39 @@
                     <h4>Variables de Entrada</h4>
                     <div class="number">{{ datos.total_columnas }}</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Archivos Excluidos</h4>
-                    <div class="number">{{ datos.archivos_excluidos }}</div>
+                <div class="stat-card {% if datos.modelo_cargado %}success{% endif %}">
+                    <h4>Estado del Modelo</h4>
+                    <div class="number" style="font-size: 18px;">
+                        {% if datos.modelo_cargado %}
+                        ✅ Activo
+                        {% else %}
+                        ❌ No cargado
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             
             <div class="table-section">
-                <h3>📋 Variables de Entrada Extraídas</h3>
+                <h3>📋 Variables de Entrada + Predicciones ML</h3>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color variables"></div>
+                        <span>Variables de entrada</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color prediccion"></div>
+                        <span>Columnas de predicción</span>
+                    </div>
+                    <div class="legend-item">
+                        <span style="color: #28a745; font-weight: bold;">●</span>
+                        <span>Conservada</span>
+                    </div>
+                    <div class="legend-item">
+                        <span style="color: #dc3545; font-weight: bold;">●</span>
+                        <span>Variable</span>
+                    </div>
+                </div>
                 
                 <div class="table-controls">
                     <div class="page-info" id="page-info">Cargando datos...</div>
@@ -465,9 +524,20 @@
                     
                     // Actualizar header
                     const thead = document.getElementById('table-header');
-                    thead.innerHTML = '<tr><th>#</th>' + 
-                        data.columns.map(col => `<th>${col}</th>`).join('') + 
-                        '</tr>';
+                    let headerHTML = '<tr><th>#</th>';
+                    
+                    // Columnas de variables
+                    data.columnas_variables.forEach(col => {
+                        headerHTML += `<th>${col}</th>`;
+                    });
+                    
+                    // Columnas de predicción (resaltadas)
+                    data.columnas_prediccion.forEach(col => {
+                        headerHTML += `<th class="prediccion-col">${col.replace('_', ' ').toUpperCase()}</th>`;
+                    });
+                    
+                    headerHTML += '</tr>';
+                    thead.innerHTML = headerHTML;
                     
                     // Actualizar body
                     const tbody = document.getElementById('table-body');
@@ -476,11 +546,28 @@
                     data.rows.forEach((row, index) => {
                         const tr = document.createElement('tr');
                         const rowNumber = (currentPage - 1) * perPage + index + 1;
-                        tr.innerHTML = `<td><strong>${rowNumber}</strong></td>` + 
-                            data.columns.map(col => {
-                                const value = row[col];
-                                return `<td>${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
-                            }).join('');
+                        let rowHTML = `<td><strong>${rowNumber}</strong></td>`;
+                        
+                        // Columnas de variables
+                        data.columnas_variables.forEach(col => {
+                            const value = row[col];
+                            rowHTML += `<td>${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
+                        });
+                        
+                        // Columnas de predicción (resaltadas)
+                        data.columnas_prediccion.forEach(col => {
+                            const value = row[col];
+                            let cellClass = 'prediccion-col';
+                            
+                            if (col === 'prediccion') {
+                                cellClass += value === 'Conservada' ? ' conservada' : ' variable';
+                                rowHTML += `<td class="${cellClass}">${value}</td>`;
+                            } else {
+                                rowHTML += `<td class="${cellClass}">${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
+                            }
+                        });
+                        
+                        tr.innerHTML = rowHTML;
                         tbody.appendChild(tr);
                     });
                     
