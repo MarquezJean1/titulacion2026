@@ -193,6 +193,22 @@ def clasificar_ventana(inicio, fin, genes):
     return 'V', 'Intergénica'
 
 # ============================================================================
+# FUNCIÓN DE LIMPIEZA
+# ============================================================================
+
+def limpiar_archivos(lista_archivos):
+    """
+    Elimina archivos del servidor después de procesarlos.
+    """
+    for archivo in lista_archivos:
+        try:
+            if os.path.exists(archivo):
+                os.remove(archivo)
+                print(f"  ✓ Eliminado: {os.path.basename(archivo)}")
+        except Exception as e:
+            print(f"  ⚠️ No se pudo eliminar {os.path.basename(archivo)}: {e}")
+            
+# ============================================================================
 # FUNCIÓN DE PREDICCIÓN
 # ============================================================================
 
@@ -396,16 +412,20 @@ def upload_file():
         
         if df is None:
             flash('Error: Todas las secuencias contienen códigos IUPAC')
+            # Limpiar archivos antes de retornar
+            limpiar_archivos(archivos_guardados)
             return redirect(url_for('index'))
         
-        # Extraer solo variables de entrada para predicción
+        # Extraer variables de entrada
         columnas_excluir = ['etiqueta', 'region_genomica', 'variante', 
                            'inicio_ventana', 'fin_ventana', 'longitud_ventana']
         
         columnas_entrada = [col for col in df.columns if col not in columnas_excluir]
         
-        # Guardar dataset de entrada
+        # Guardar dataset de entrada CON posicion_relativa (para mostrar en frontend)
         dataset_global = df[columnas_entrada].copy()
+        
+        print(f"📊 Columnas extraídas: {columnas_entrada}")
         
         # HACER PREDICCIONES
         print("🤖 Realizando predicciones...")
@@ -422,6 +442,12 @@ def upload_file():
         
         excluidas_global = excluidas
         
+        # ============================================================
+        # LIMPIAR ARCHIVOS DESPUÉS DE PROCESAR EXITOSAMENTE
+        # ============================================================
+        limpiar_archivos(archivos_guardados)
+        print(f"🧹 {len(archivos_guardados)} archivos eliminados del servidor")
+        
         flash(f'✅ {len(archivos_guardados)} archivos procesados y {len(dataset_completo_global)} predicciones realizadas')
         
         # Preparar datos para la vista
@@ -436,6 +462,8 @@ def upload_file():
         return render_template('index.html', datos=datos)
         
     except Exception as e:
+        # Limpiar archivos en caso de error también
+        limpiar_archivos(archivos_guardados)
         flash(f'Error al procesar archivos: {str(e)}')
         import traceback
         traceback.print_exc()
