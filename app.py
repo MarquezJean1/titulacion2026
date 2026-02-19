@@ -10,6 +10,8 @@ import pickle
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+from flask import send_file
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_aqui'
@@ -578,7 +580,7 @@ def visualizar_circular():
             except:
                 prob = 0.0
             prob = max(0.0, min(1.0, prob))
-        
+
             if prob >= 0.70:
                 # Verde (más intenso mientras más prob)
                 t = (prob - 0.70) / 0.30  # 0..1
@@ -586,7 +588,7 @@ def visualizar_circular():
                 g = clamp(180 + 75 * t)       # 180 -> 255
                 b = clamp(80)                 # fijo
                 return f"rgb({r},{g},{b})"
-        
+
             elif prob >= 0.30:
                 # Amarillo / naranja suave (intermedio)
                 t = (prob - 0.30) / 0.40      # 0..1
@@ -594,7 +596,7 @@ def visualizar_circular():
                 g = clamp(200 - 20 * t)       # 200 -> 180
                 b = clamp(60)                 # fijo
                 return f"rgb({r},{g},{b})"
-        
+
             else:
                 # Rojo (más intenso mientras más baja prob)
                 t = prob / 0.30               # 0..1
@@ -688,5 +690,41 @@ def visualizar_circular():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/descargar_excel')
+def descargar_excel():
+    global dataset_completo_global
+    
+    if dataset_completo_global is None or len(dataset_completo_global) == 0:
+        return jsonify({'error': 'No hay datos para descargar. Primero carga archivos GFF3.'}), 400
+
+    try:
+        # Copia para no tocar el global
+        df = dataset_completo_global.copy()
+
+        # (Opcional) ordenar si existen columnas
+        if 'variante' in df.columns and 'inicio_ventana' in df.columns:
+            df = df.sort_values(['variante', 'inicio_ventana']).reset_index(drop=True)
+
+        # Nombre archivo
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"resultados_predicciones_HPV_{stamp}.xlsx"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Exportar a Excel
+        with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Resultados")
+
+        return send_file(
+            filepath,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)

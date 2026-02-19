@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,44 +11,44 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
+
         .container {
             max-width: 1600px;
             margin: 0 auto;
             background-color: white;
             border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             overflow: hidden;
         }
-        
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
-        
+
         .header h1 {
             font-size: 28px;
             margin-bottom: 10px;
         }
-        
+
         .header p {
             font-size: 14px;
             opacity: 0.9;
         }
-        
+
         .content {
             padding: 30px;
         }
-        
+
         .upload-section {
             background-color: #f8f9fa;
             border: 2px dashed #667eea;
@@ -56,22 +57,22 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        
+
         .upload-section h3 {
             color: #333;
             margin-bottom: 15px;
         }
-        
+
         .upload-section p {
             color: #666;
             margin-bottom: 20px;
             font-size: 14px;
         }
-        
+
         input[type="file"] {
             display: none;
         }
-        
+
         .file-label {
             display: inline-block;
             background-color: #667eea;
@@ -82,13 +83,13 @@
             transition: all 0.3s;
             font-weight: 500;
         }
-        
+
         .file-label:hover {
             background-color: #5568d3;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
-        
+
         .files-list {
             margin: 15px 0;
             color: #333;
@@ -96,7 +97,7 @@
             max-height: 150px;
             overflow-y: auto;
         }
-        
+
         .file-item {
             background: white;
             padding: 8px 12px;
@@ -104,7 +105,7 @@
             border-radius: 5px;
             border: 1px solid #e0e0e0;
         }
-        
+
         .btn-upload {
             background-color: #28a745;
             color: white;
@@ -117,19 +118,19 @@
             transition: all 0.3s;
             margin-top: 15px;
         }
-        
+
         .btn-upload:hover {
             background-color: #218838;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
         }
-        
+
         .btn-upload:disabled {
             background-color: #ccc;
             cursor: not-allowed;
             transform: none;
         }
-        
+
         .message {
             padding: 15px 20px;
             margin: 20px 0;
@@ -138,27 +139,27 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
+
         .stats-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        
+
         .stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        
+
         .stat-card.success {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
-        
+
         .stat-card h4 {
             font-size: 12px;
             opacity: 0.9;
@@ -166,22 +167,22 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
+
         .stat-card .number {
             font-size: 32px;
             font-weight: bold;
         }
-        
+
         .table-section {
             margin-top: 30px;
         }
-        
+
         .table-section h3 {
             color: #333;
             margin-bottom: 20px;
             font-size: 20px;
         }
-        
+
         .table-controls {
             display: flex;
             justify-content: space-between;
@@ -190,13 +191,13 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        
+
         .pagination {
             display: flex;
             gap: 5px;
             align-items: center;
         }
-        
+
         .pagination button {
             padding: 8px 15px;
             border: 1px solid #667eea;
@@ -206,48 +207,48 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
+
         .pagination button:hover:not(:disabled) {
             background: #667eea;
             color: white;
         }
-        
+
         .pagination button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         .pagination button.active {
             background: #667eea;
             color: white;
         }
-        
+
         .page-info {
             color: #666;
             font-size: 14px;
         }
-        
+
         .per-page-select {
             padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
         }
-        
+
         .table-wrapper {
             overflow-x: auto;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             max-height: 600px;
             overflow-y: auto;
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: white;
         }
-        
+
         thead {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -255,7 +256,7 @@
             top: 0;
             z-index: 10;
         }
-        
+
         th {
             padding: 15px 12px;
             text-align: left;
@@ -265,55 +266,55 @@
             letter-spacing: 0.5px;
             white-space: nowrap;
         }
-        
+
         /* Columnas de predicción con fondo diferente */
         th.prediccion-col {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
-        
+
         td {
             padding: 12px;
             border-bottom: 1px solid #e9ecef;
             font-size: 13px;
             color: #333;
         }
-        
+
         /* Columnas de predicción resaltadas */
         td.prediccion-col {
             background-color: #e7f9ed;
             font-weight: 600;
         }
-        
+
         td.prediccion-col.conservada {
             color: #28a745;
         }
-        
+
         td.prediccion-col.variable {
             color: #dc3545;
         }
-        
+
         tbody tr:hover {
             background-color: #f8f9fa;
         }
-        
+
         tbody tr:hover td.prediccion-col {
             background-color: #d4f4dd;
         }
-        
+
         tbody tr:nth-child(even) {
             background-color: #fafbfc;
         }
-        
+
         tbody tr:nth-child(even) td.prediccion-col {
             background-color: #dff7e6;
         }
-        
+
         .loading {
             text-align: center;
             padding: 40px;
             color: #666;
         }
-        
+
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #667eea;
@@ -323,12 +324,17 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 15px;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .legend {
             background-color: #f8f9fa;
             padding: 15px;
@@ -339,27 +345,28 @@
             align-items: center;
             flex-wrap: wrap;
         }
-        
+
         .legend-item {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
+
         .legend-color {
             width: 20px;
             height: 20px;
             border-radius: 3px;
         }
-        
+
         .legend-color.variables {
             background-color: #e9ecef;
         }
-        
+
         .legend-color.prediccion {
             background-color: #e7f9ed;
         }
-          .btn-visualizar {
+
+        .btn-visualizar {
             display: inline-block;
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
@@ -371,7 +378,7 @@
             box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
             transition: all 0.3s;
         }
-        
+
         .btn-visualizar:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
@@ -385,36 +392,36 @@
             <h1>🧬 Procesador de Archivos GFF3 - HPV con Predicción ML</h1>
             <p>Carga archivos GFF3 para extraer variables y obtener predicciones de regiones conservadas/variables</p>
         </div>
-        
+
         <div class="content">
             {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="message">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
+            {% if messages %}
+            {% for message in messages %}
+            <div class="message">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
             {% endwith %}
-            
+
             <div class="upload-section">
                 <h3>📁 Cargar Archivos GFF3</h3>
                 <p>Selecciona uno o múltiples archivos GFF3<br>Tamaño máximo por archivo: 16 MB</p>
-                
+
                 <form method="POST" action="/upload" enctype="multipart/form-data" id="uploadForm">
                     <label for="file-input" class="file-label">
                         📂 Seleccionar Archivos
                     </label>
                     <input type="file" id="file-input" name="files[]" accept=".gff3,.gff" multiple required>
-                    
+
                     <div class="files-list" id="files-list">Ningún archivo seleccionado</div>
-                    
+
                     <button type="submit" class="btn-upload" id="btn-submit" disabled>
                         ⬆ Procesar y Predecir
                     </button>
                 </form>
             </div>
-            
+
             {% if datos %}
-             <div class="stats-cards">
+            <div class="stats-cards">
                 <div class="stat-card">
                     <h4>Archivos Procesados</h4>
                     <div class="number">{{ datos.total_archivos }}</div>
@@ -438,18 +445,25 @@
                     </div>
                 </div>
             </div>
-            
-            
+
+
             <!-- NUEVO BOTÓN PARA VISUALIZACIÓN CIRCULAR -->
-            <div style="text-align: center; margin: 20px 0;">
+            <div
+                style="text-align: center; margin: 20px 0; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
                 <a href="/visualizar_circular" target="_blank" class="btn-visualizar">
                     🎯 Visualización Circular del Genoma
                 </a>
+
+                <a href="/descargar_excel" class="btn-visualizar"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    📥 Descargar Excel (.xlsx)
+                </a>
             </div>
-           
+
+
             <div class="table-section">
                 <h3>📋 Variables de Entrada + Predicciones ML</h3>
-                
+
                 <div class="legend">
                     <div class="legend-item">
                         <div class="legend-color variables"></div>
@@ -468,10 +482,10 @@
                         <span>Variable</span>
                     </div>
                 </div>
-                
+
                 <div class="table-controls">
                     <div class="page-info" id="page-info">Cargando datos...</div>
-                    
+
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <label for="per-page">Filas por página:</label>
                         <select id="per-page" class="per-page-select">
@@ -481,7 +495,7 @@
                             <option value="200">200</option>
                         </select>
                     </div>
-                    
+
                     <div class="pagination" id="pagination">
                         <button id="btn-first" onclick="goToPage(1)">«</button>
                         <button id="btn-prev" onclick="goToPage(currentPage - 1)">‹</button>
@@ -490,7 +504,7 @@
                         <button id="btn-last" onclick="goToPage(totalPages)">»</button>
                     </div>
                 </div>
-                
+
                 <div class="table-wrapper">
                     <div id="loading" class="loading">
                         <div class="spinner"></div>
@@ -505,14 +519,14 @@
             {% endif %}
         </div>
     </div>
-    
+
     <script>
         // Manejo de selección de archivos
         const fileInput = document.getElementById('file-input');
         const filesList = document.getElementById('files-list');
         const btnSubmit = document.getElementById('btn-submit');
-        
-        fileInput.addEventListener('change', function() {
+
+        fileInput.addEventListener('change', function () {
             if (this.files && this.files.length > 0) {
                 filesList.innerHTML = '';
                 for (let i = 0; i < this.files.length; i++) {
@@ -527,64 +541,64 @@
                 btnSubmit.disabled = true;
             }
         });
-        
+
         {% if datos %}
         // Variables de paginación
         let currentPage = 1;
         let totalPages = 1;
         let perPage = 50;
-        
+
         // Cargar datos
         function loadData(page = 1) {
             const loading = document.getElementById('loading');
             const table = document.getElementById('data-table');
-            
+
             loading.style.display = 'block';
             table.style.display = 'none';
-            
+
             fetch(`/get_data?page=${page}&per_page=${perPage}`)
                 .then(response => response.json())
                 .then(data => {
                     currentPage = data.page;
                     totalPages = data.total_pages;
-                    
+
                     // Actualizar header
                     const thead = document.getElementById('table-header');
                     let headerHTML = '<tr><th>#</th>';
-                    
+
                     // Columnas de variables
                     data.columnas_variables.forEach(col => {
                         headerHTML += `<th>${col}</th>`;
                     });
-                    
+
                     // Columnas de predicción (resaltadas)
                     data.columnas_prediccion.forEach(col => {
                         headerHTML += `<th class="prediccion-col">${col.replace('_', ' ').toUpperCase()}</th>`;
                     });
-                    
+
                     headerHTML += '</tr>';
                     thead.innerHTML = headerHTML;
-                    
+
                     // Actualizar body
                     const tbody = document.getElementById('table-body');
                     tbody.innerHTML = '';
-                    
+
                     data.rows.forEach((row, index) => {
                         const tr = document.createElement('tr');
                         const rowNumber = (currentPage - 1) * perPage + index + 1;
                         let rowHTML = `<td><strong>${rowNumber}</strong></td>`;
-                        
+
                         // Columnas de variables
                         data.columnas_variables.forEach(col => {
                             const value = row[col];
                             rowHTML += `<td>${typeof value === 'number' ? value.toFixed(2) : value}</td>`;
                         });
-                        
+
                         // Columnas de predicción (resaltadas)
                         data.columnas_prediccion.forEach(col => {
                             const value = row[col];
                             let cellClass = 'prediccion-col';
-                            
+
                             if (col === 'prediccion') {
                                 cellClass += value === 'Conservada' ? ' conservada' : ' variable';
                                 rowHTML += `<td class="${cellClass}">${value}</td>`;
@@ -592,20 +606,20 @@
                                 rowHTML += `<td class="${cellClass}">${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
                             }
                         });
-                        
+
                         tr.innerHTML = rowHTML;
                         tbody.appendChild(tr);
                     });
-                    
+
                     // Actualizar info de página
                     const start = (currentPage - 1) * perPage + 1;
                     const end = Math.min(currentPage * perPage, data.total_rows);
-                    document.getElementById('page-info').textContent = 
+                    document.getElementById('page-info').textContent =
                         `Mostrando ${start}-${end} de ${data.total_rows} filas`;
-                    
+
                     // Actualizar botones de paginación
                     updatePagination();
-                    
+
                     loading.style.display = 'none';
                     table.style.display = 'table';
                 })
@@ -614,31 +628,31 @@
                     loading.innerHTML = '<p style="color: red;">Error al cargar datos</p>';
                 });
         }
-        
+
         function goToPage(page) {
             if (page >= 1 && page <= totalPages) {
                 loadData(page);
             }
         }
-        
+
         function updatePagination() {
             document.getElementById('btn-first').disabled = currentPage === 1;
             document.getElementById('btn-prev').disabled = currentPage === 1;
             document.getElementById('btn-next').disabled = currentPage === totalPages;
             document.getElementById('btn-last').disabled = currentPage === totalPages;
-            
+
             // Generar números de página
             const pageNumbers = document.getElementById('page-numbers');
             pageNumbers.innerHTML = '';
-            
+
             const maxButtons = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
             let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-            
+
             if (endPage - startPage < maxButtons - 1) {
                 startPage = Math.max(1, endPage - maxButtons + 1);
             }
-            
+
             for (let i = startPage; i <= endPage; i++) {
                 const btn = document.createElement('button');
                 btn.textContent = i;
@@ -649,16 +663,17 @@
                 pageNumbers.appendChild(btn);
             }
         }
-        
+
         // Cambio de filas por página
-        document.getElementById('per-page').addEventListener('change', function() {
+        document.getElementById('per-page').addEventListener('change', function () {
             perPage = parseInt(this.value);
             loadData(1);
         });
-        
+
         // Cargar datos iniciales
         loadData(1);
         {% endif %}
     </script>
 </body>
+
 </html>
