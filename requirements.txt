@@ -17,4 +17,5 @@ xgboost==2.0.3
 plotly==5.20.0
 gunicorn==21.2.0
 joblib==1.4.2
+openpyxl
 

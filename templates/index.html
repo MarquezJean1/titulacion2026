@@ -386,6 +386,7 @@
     </style>
 </head>
 
+
 <body>
     <div class="container">
         <div class="header">
@@ -404,7 +405,7 @@
 
             <div class="upload-section">
                 <h3>📁 Cargar Archivos GFF3</h3>
-                <p>Selecciona uno o múltiples archivos GFF3<br>Tamaño máximo por archivo: 16 MB</p>
+                <p>Selecciona uno o múltiples archivos GFF3</p>
 
                 <form method="POST" action="/upload" enctype="multipart/form-data" id="uploadForm">
                     <label for="file-input" class="file-label">
@@ -415,7 +416,7 @@
                     <div class="files-list" id="files-list">Ningún archivo seleccionado</div>
 
                     <button type="submit" class="btn-upload" id="btn-submit" disabled>
-                        ⬆ Procesar y Predecir
+                        Procesar y Predecir
                     </button>
                 </form>
             </div>
@@ -426,11 +427,18 @@
                     <h4>Archivos Procesados</h4>
                     <div class="number">{{ datos.total_archivos }}</div>
                 </div>
+                <div class="stat-card {% if datos.archivos_excluidos > 0 %} {% endif %}"
+                    style="background: linear-gradient(135deg, #fa9d63 0%, #de4d14 100%);">
+                    <h4>Archivos Excluidos (IUPAC)</h4>
+                    <div class="number">
+                        {{ datos.archivos_excluidos }}
+                    </div>
+                </div>
                 <div class="stat-card">
                     <h4>Total de Ventanas</h4>
                     <div class="number">{{ datos.total_filas }}</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card success">
                     <h4>Variables de Entrada</h4>
                     <div class="number">{{ datos.total_columnas }}</div>
                 </div>
@@ -450,12 +458,13 @@
             <!-- NUEVO BOTÓN PARA VISUALIZACIÓN CIRCULAR -->
             <div
                 style="text-align: center; margin: 20px 0; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-                <a href="/visualizar_circular" target="_blank" class="btn-visualizar">
+                <a href="/visualizar_circular" target="_blank" class="btn-visualizar"
+                    style="background: linear-gradient(135deg, #5d74dc 0%, #093e8f 100%);">
                     🎯 Visualización Circular del Genoma
                 </a>
 
                 <a href="/descargar_excel" class="btn-visualizar"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    style="background: linear-gradient(135deg, #4057be 0%, #093e8f 100%);">
                     📥 Descargar Excel (.xlsx)
                 </a>
             </div>
@@ -527,20 +536,24 @@
         const btnSubmit = document.getElementById('btn-submit');
 
         fileInput.addEventListener('change', function () {
+            const maxFiles = 10;
+            if (this.files.length > maxFiles) {
+                alert(`Solo se permiten máximo ${maxFiles} archivos.`);
+                this.value = '';  // limpiar selección
+                filesList.textContent = 'Ningún archivo seleccionado';
+                btnSubmit.disabled = true;
+                return;
+            }
             if (this.files && this.files.length > 0) {
-                filesList.innerHTML = '';
-                for (let i = 0; i < this.files.length; i++) {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item';
-                    fileItem.textContent = `📄 ${this.files[i].name}`;
-                    filesList.appendChild(fileItem);
-                }
+                const total = this.files.length;
+                filesList.innerHTML = `<strong>${total}</strong> archivo(s) seleccionado(s)`;
                 btnSubmit.disabled = false;
             } else {
                 filesList.textContent = 'Ningún archivo seleccionado';
                 btnSubmit.disabled = true;
             }
         });
+
 
         {% if datos %}
         // Variables de paginación
@@ -673,7 +686,16 @@
         // Cargar datos iniciales
         loadData(1);
         {% endif %}
+
+        const uploadForm = document.getElementById('uploadForm');
+        const loadingModal = document.getElementById('loadingModal');
+
+        function showLoading() {
+            loadingModal.classList.add('show');
+            loadingModal.setAttribute('aria-hidden', 'false');
+        }
     </script>
+
 </body>
 
 </html>

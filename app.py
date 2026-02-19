@@ -501,7 +501,7 @@ def upload_file():
         datos = {
             'total_filas': len(dataset_completo_global),
             'total_columnas': len(columnas_entrada),
-            'total_archivos': len(archivos_guardados),
+            'total_archivos': len(archivos_guardados) - len(excluidas),
             'archivos_excluidos': len(excluidas),
             'modelo_cargado': modelo is not None
         }
@@ -639,7 +639,7 @@ def visualizar_circular():
         # Configuración del layout
         fig.update_layout(
             title={
-                'text': '🧬 Visualización Circular del Genoma HPV<br><sub>Verde: Conservada | Rojo: Variable</sub>',
+                'text': '🧬 Visualización Circular del Genoma HPV<br><sub>Rojo: Variable | Amarilla: Intermedia | Verde: Conservada</sub>',
                 'x': 0.5,
                 'xanchor': 'center',
                 'font': {'size': 20, 'color': '#333'}
@@ -680,7 +680,21 @@ def visualizar_circular():
         graph_html = fig.to_html(
             full_html=False,
             include_plotlyjs='cdn',
-            config={'responsive': True, 'displayModeBar': True}
+            config={
+                'responsive': True,
+                'displayModeBar': True,
+                'modeBarButtonsToRemove': [
+                    'zoom2d',
+                    'pan2d',
+                    'select2d',
+                    'lasso2d',
+                    'zoomIn2d',
+                    'zoomOut2d',
+                    'autoScale2d',
+                    'resetScale2d'
+                ],
+                'modeBarButtonsToAdd': ['toImage']
+            }
         )
         
         return render_template('visualizacion_circular.html', graph_html=graph_html, total_ventanas=total_filas)
