@@ -21,18 +21,32 @@ ALLOWED_EXTENSIONS = {'gff3', 'gff'}
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # ============================================================================
-# CARGAR MODELO Y SCALER
+# CARGAR MODELO, SCALER E INFO (XGBOOST)
 # ============================================================================
 try:
-    with open('modelo_random_forest.pkl', 'rb') as archivo:
+    print("iniciando carga...")
+    with open('modelo_xgboost.pkl', 'rb') as archivo:
         modelo = pickle.load(archivo)
+    print("Modelo cargado")
     with open('scaler.pkl', 'rb') as archivo:
         scaler = pickle.load(archivo)
-    print("✅ Modelo y scaler cargados exitosamente")
+    print("Scaler cargado")
+    with open('info_modelo_xgboost.pkl', 'rb') as archivo:
+        info_modelo = pickle.load(archivo)
+    print("Info del modelo cargado")
+    print("✅ Modelo XGBoost, scaler e info_modelo cargados exitosamente")
+
+    # (Opcional) imprimir hiperparámetros en consola al iniciar
+    if isinstance(info_modelo, dict) and "hiperparametros" in info_modelo:
+        print("\n📌 Hiperparámetros XGBoost cargados:")
+        for k, v in info_modelo["hiperparametros"].items():
+            print(f" - {k}: {v}")
+
 except Exception as e:
-    print(f"⚠️  Advertencia: No se pudieron cargar los modelos: {e}")
+    print(f"⚠️  Advertencia: No se pudieron cargar los PKL: {e}")
     modelo = None
     scaler = None
+    info_modelo = None
 
 # ============================================================================
 # FUNCIONES DE EXTRACCIÓN (del código original)
@@ -214,11 +228,19 @@ def limpiar_archivos(lista_archivos):
 # ============================================================================
 # FUNCIÓN DE PREDICCIÓN
 # ============================================================================
+# ============================================================================
+# FUNCIÓN DE PREDICCIÓN (ADAPTADA A XGBOOST con clase invertida)
+# ============================================================================
 
 def predecir_region_genomica(datos_ventana):
     """
-    Hace predicción usando el modelo cargado.
-    Filtra solo las variables que el modelo espera.
+    Predice usando XGBoost entrenado con re-etiquetado:
+      - En entrenamiento XGB: Variables (original 0) -> 1
+                           Conservadas (original 1) -> 0
+    Por tanto:
+      prob_var = predict_proba(X)[:,1]  # P(Variables)
+      pred_xgb = prob_var >= umbral
+      pred_original = 0 si pred_xgb==1 else 1
     """
     if modelo is None or scaler is None:
         return {
@@ -226,48 +248,67 @@ def predecir_region_genomica(datos_ventana):
             'prob_conservada': 0.0,
             'prob_variable': 0.0
         }
-    
+
     try:
-        # Variables que el modelo espera (SIN posicion_relativa)
-        variables_modelo = [
-            'freq_A', 'freq_T', 'freq_C', 'freq_G',
-            'contenido_GC',
-            'GC_skew', 'AT_skew',
-            'entropia_shannon',
-            'dinuc_AA', 'dinuc_AT', 'dinuc_CG', 'dinuc_GC', 'dinuc_TA', 'dinuc_TT',
-            'conservacion_posicional'
-        ]
-        
-        # Filtrar solo las variables que el modelo necesita
-        datos_filtrados = {k: v for k, v in datos_ventana.items() if k in variables_modelo}
-        
-        # Verificar que tengamos todas las variables necesarias
-        if len(datos_filtrados) != len(variables_modelo):
-            faltantes = set(variables_modelo) - set(datos_filtrados.keys())
+        # 1) Definir variables esperadas
+        #    Si info_modelo trae variables_usadas, se usa eso (recomendado)
+        if isinstance(info_modelo, dict) and info_modelo.get("variables_usadas"):
+            variables_modelo = info_modelo["variables_usadas"]
+        else:
+            # fallback: lista fija (la misma que tú usabas, SIN posicion_relativa)
+            variables_modelo = [
+                'freq_A', 'freq_T', 'freq_C', 'freq_G',
+                'contenido_GC',
+                'GC_skew', 'AT_skew',
+                'entropia_shannon',
+                'dinuc_AA', 'dinuc_AT', 'dinuc_CG', 'dinuc_GC', 'dinuc_TA', 'dinuc_TT',
+                'conservacion_posicional'
+            ]
+
+        # 2) Umbral (si está guardado), si no, 0.5
+        umbral = 0.5
+        if isinstance(info_modelo, dict) and "umbral_prob_var" in info_modelo:
+            umbral = float(info_modelo["umbral_prob_var"])
+
+        # 3) Filtrar solo variables esperadas
+        datos_filtrados = {k: datos_ventana.get(k, None) for k in variables_modelo}
+
+        # Validar faltantes
+        faltantes = [k for k, v in datos_filtrados.items() if v is None]
+        if faltantes:
             print(f"⚠️ Faltan variables: {faltantes}")
             return {
                 'prediccion': 'Error',
                 'prob_conservada': 0.0,
                 'prob_variable': 0.0
             }
-        
-        # Convertir a DataFrame con el orden correcto
+
+        # 4) DataFrame en orden correcto
         df_input = pd.DataFrame([datos_filtrados])[variables_modelo]
-        
-        # Escalar
-        df_scaled = scaler.transform(df_input)
-        
-        # Predecir
-        prediccion = modelo.predict(df_scaled)[0]
-        probabilidad = modelo.predict_proba(df_scaled)[0]
-        
+
+        # 5) Escalar (porque tú lo hiciste en preprocesamiento)
+        X_scaled = scaler.transform(df_input)
+
+        # 6) Probabilidad de Variables en el esquema XGB
+        prob_var = float(modelo.predict_proba(X_scaled)[0][1])  # P(Variables)
+
+        # 7) Predicción en esquema XGB (1=Variables, 0=Conservadas)
+        pred_xgb = 1 if prob_var >= umbral else 0
+
+        # 8) Convertir a esquema original:
+        #    si pred_xgb=1 => original 0 (Variables)
+        #    si pred_xgb=0 => original 1 (Conservadas)
+        pred_original = 0 if pred_xgb == 1 else 1
+
+        # 9) Retornar en tu formato
         resultado = {
-            'prediccion': 'Conservada' if prediccion == 1 else 'Variable',
-            'prob_conservada': round(float(probabilidad[1]), 4),
-            'prob_variable': round(float(probabilidad[0]), 4)
+            'prediccion': 'Conservada' if pred_original == 1 else 'Variable',
+            'prob_conservada': round(1.0 - prob_var, 4),
+            'prob_variable': round(prob_var, 4),
         }
-        
+
         return resultado
+
     except Exception as e:
         print(f"Error en predicción: {e}")
         import traceback
@@ -277,7 +318,8 @@ def predecir_region_genomica(datos_ventana):
             'prob_conservada': 0.0,
             'prob_variable': 0.0
         }
-    
+
+
 def procesar_multiples_gff3(archivos_gff3, tamano_ventana=100, paso=50):
     """Procesa múltiples archivos GFF3 y retorna DataFrame con variables"""
     
@@ -525,20 +567,41 @@ def visualizar_circular():
         total_filas = len(df)
         df['angulo'] = [(i / total_filas) * 360 for i in range(total_filas)]
         
+        def clamp(x, lo=0, hi=255):
+            return max(lo, min(hi, int(x)))
         # Crear color basado en probabilidad de conservada
         # 0-30%: Rojo, 30-70%: Amarillo, 70-100%: Verde
         def obtener_color(prob):
+            # Asegurar que prob esté en 0..1
+            try:
+                prob = float(prob)
+            except:
+                prob = 0.0
+            prob = max(0.0, min(1.0, prob))
+        
             if prob >= 0.70:
-                # Verde: de verde claro a verde oscuro
-                intensidad = int(255 * (prob - 0.70) / 0.30)
-                return f'rgb({255-intensidad}, {200+intensidad//4}, {100})'
+                # Verde (más intenso mientras más prob)
+                t = (prob - 0.70) / 0.30  # 0..1
+                r = clamp(255 * (1 - t))      # 255 -> 0
+                g = clamp(180 + 75 * t)       # 180 -> 255
+                b = clamp(80)                 # fijo
+                return f"rgb({r},{g},{b})"
+        
             elif prob >= 0.30:
-                # Amarillo
-                return f'rgb(255, {200}, 50)'
+                # Amarillo / naranja suave (intermedio)
+                t = (prob - 0.30) / 0.40      # 0..1
+                r = clamp(255)
+                g = clamp(200 - 20 * t)       # 200 -> 180
+                b = clamp(60)                 # fijo
+                return f"rgb({r},{g},{b})"
+        
             else:
-                # Rojo: de naranja a rojo oscuro
-                intensidad = int(255 * (0.30 - prob) / 0.30)
-                return f'rgb({255}, {150-intensidad}, {100-intensidad})'
+                # Rojo (más intenso mientras más baja prob)
+                t = prob / 0.30               # 0..1
+                r = clamp(255)
+                g = clamp(50 + 100 * t)       # 50 -> 150
+                b = clamp(50 + 50 * t)        # 50 -> 100
+                return f"rgb({r},{g},{b})"
         
         df['color'] = df['prob_conservada'].apply(obtener_color)
         

@@ -378,6 +378,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -576,7 +577,7 @@
                         // Columnas de variables
                         data.columnas_variables.forEach(col => {
                             const value = row[col];
-                            rowHTML += `<td>${typeof value === 'number' ? value.toFixed(4) : value}</td>`;
+                            rowHTML += `<td>${typeof value === 'number' ? value.toFixed(2) : value}</td>`;
                         });
                         
                         // Columnas de predicción (resaltadas)

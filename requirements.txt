@@ -2,15 +2,19 @@
 #pip install pandas
 #pip install numpy
 #pip install scikit-learn==1.6.1
-#
+#pip install xgboost
+
+#.gitignore
 #python -m venv venv
 #venv\Scripts\activate
 #python app.py
-
-flask
-pandas
-numpy
+# requirements
+Flask==3.0.2
+pandas==2.2.2
+numpy==1.26.4
 scikit-learn==1.6.1
-gunicorn
-joblib
-plotly
+xgboost==2.0.3
+plotly==5.20.0
+gunicorn==21.2.0
+joblib==1.4.2
+
